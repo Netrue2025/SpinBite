@@ -7,29 +7,10 @@ import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
 import { ProtectedPage } from "@/components/protected-page";
 import { mealTypes, weekdays } from "@/lib/constants";
+import { isMealSlotPast, weekDates } from "@/lib/planner-utils";
 import { findMeal } from "@/lib/recommendations";
 import { getStoredMeals, getStoredPlans, saveStoredPlans } from "@/lib/storage";
 import type { Meal, MealPlan, MealType } from "@/lib/types";
-
-function dateKey(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function weekDates() {
-  const today = new Date();
-  const monday = new Date(today);
-  const day = today.getDay() || 7;
-  monday.setDate(today.getDate() - day + 1);
-
-  return Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(monday);
-    date.setDate(monday.getDate() + index);
-    return dateKey(date);
-  });
-}
 
 export default function PlannerPage() {
   const { user } = useAuth();
@@ -48,7 +29,7 @@ export default function PlannerPage() {
   }
 
   function replaceMeal(date: string, mealType: MealType) {
-    if (!user) {
+    if (!user || isMealSlotPast(date, mealType)) {
       return;
     }
 
@@ -87,12 +68,20 @@ export default function PlannerPage() {
       (plan) => !(plan.userId === user.id && dates.includes(plan.date) && mealTypes.includes(plan.mealType))
     );
     const generated = dates.flatMap((date) =>
-      mealTypes.map((mealType) => {
+      mealTypes.flatMap((mealType) => {
+        if (isMealSlotPast(date, mealType)) {
+          return [];
+        }
+
         const picked = findMeal(meals, {
           country: user.preferredCountry,
           tag: mealType === "breakfast" ? "quick" : mealType === "lunch" ? "healthy" : "cheap",
           mealType
         });
+
+        if (!picked) {
+          return [];
+        }
 
         return {
           id: `plan-${Date.now()}-${date}-${mealType}`,
@@ -135,6 +124,7 @@ export default function PlannerPage() {
                   {mealTypes.map((mealType) => {
                     const plan = plans.find((item) => item.userId === user?.id && item.date === date && item.mealType === mealType);
                     const plannedMeal = mealFor(plan);
+                    const locked = isMealSlotPast(date, mealType);
 
                     return (
                       <div key={mealType} className="rounded-[1.5rem] bg-slate-50 p-3">
@@ -142,8 +132,9 @@ export default function PlannerPage() {
                           <p className="font-black capitalize">{mealType}</p>
                           <button
                             onClick={() => replaceMeal(date, mealType)}
-                            className="grid h-9 w-9 place-items-center rounded-full bg-white text-slate-800 shadow-sm"
-                            title="Replace meal"
+                            disabled={locked}
+                            className="grid h-9 w-9 place-items-center rounded-full bg-white text-slate-800 shadow-sm disabled:cursor-not-allowed disabled:opacity-35"
+                            title={locked ? "Past meal slot" : "Replace meal"}
                           >
                             <RefreshCcw size={16} />
                           </button>
@@ -159,9 +150,10 @@ export default function PlannerPage() {
                         ) : (
                           <button
                             onClick={() => replaceMeal(date, mealType)}
-                            className="grid h-40 w-full place-items-center rounded-2xl border-2 border-dashed border-slate-200 bg-white text-center text-sm font-black text-slate-500"
+                            disabled={locked}
+                            className="grid h-40 w-full place-items-center rounded-2xl border-2 border-dashed border-slate-200 bg-white text-center text-sm font-black text-slate-500 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-300"
                           >
-                            Add suggestion
+                            {locked ? "Past slot" : "Add suggestion"}
                           </button>
                         )}
                       </div>

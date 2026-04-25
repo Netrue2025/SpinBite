@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { writePlansCookie } from "@/lib/planner-utils";
 import { hasSupabaseConfig, supabase } from "@/lib/supabase";
 import { getStoredUsers, saveStoredUsers } from "@/lib/storage";
 import type { AppUser, Country } from "@/lib/types";
@@ -11,7 +12,8 @@ type AuthContextValue = {
   loading: boolean;
   isSupabaseReady: boolean;
   signInWithGoogle: () => Promise<void>;
-  signInWithEmail: (email: string, password: string, name?: string) => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (name: string, email: string, password: string) => Promise<void>;
   demoLogin: (role?: AppUser["role"]) => void;
   updateProfile: (updates: Partial<Pick<AppUser, "name" | "preferredCountry">>) => void;
   signOut: () => Promise<void>;
@@ -79,12 +81,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!user || hasSupabaseConfig) {
+    if (!user) {
       return;
     }
 
-    window.localStorage.setItem("meal-spin-user", JSON.stringify(user));
-    getStoredUsers(user);
+    if (!hasSupabaseConfig) {
+      window.localStorage.setItem("meal-spin-user", JSON.stringify(user));
+      getStoredUsers(user);
+    }
+
+    try {
+      const savedPlans = window.localStorage.getItem("meal-spin-plans");
+      if (savedPlans) {
+        writePlansCookie(JSON.parse(savedPlans));
+      }
+    } catch {
+      writePlansCookie([]);
+    }
   }, [user]);
 
   const value = useMemo<AuthContextValue>(
@@ -107,15 +120,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(demo);
         router.push("/dashboard");
       },
-      async signInWithEmail(email, password, name) {
+      async signInWithEmail(email, password) {
         if (!email || !password) {
           throw new Error("Email and password are required.");
         }
 
         if (hasSupabaseConfig && supabase) {
-          const { data, error } = name
-            ? await supabase.auth.signUp({ email, password, options: { data: { name } } })
-            : await supabase.auth.signInWithPassword({ email, password });
+          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+          if (error) {
+            throw error;
+          }
+
+          const authUser = data.user;
+          if (authUser) {
+            const { data: profile } = await supabase.from("users").select("*").eq("id", authUser.id).maybeSingle();
+            setUser({
+              id: authUser.id,
+              name: profile?.name ?? authUser.user_metadata?.name ?? "Meal Spinner",
+              email: authUser.email ?? email,
+              role: profile?.role ?? "user",
+              preferredCountry: profile?.preferred_country ?? "Nigeria",
+              createdAt: profile?.created_at ?? new Date().toISOString()
+            });
+          }
+        } else {
+          const localUser = makeUser(email);
+          const users = getStoredUsers(localUser);
+          saveStoredUsers(users);
+          setUser(localUser);
+        }
+
+        router.push("/dashboard");
+      },
+      async signUpWithEmail(name, email, password) {
+        if (!name || !email || !password) {
+          throw new Error("Name, email, and password are required.");
+        }
+
+        if (hasSupabaseConfig && supabase) {
+          const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name } } });
 
           if (error) {
             throw error;

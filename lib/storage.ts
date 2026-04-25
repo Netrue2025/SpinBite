@@ -1,4 +1,5 @@
 import { initialMeals } from "@/lib/meals";
+import { writePlansCookie } from "@/lib/planner-utils";
 import type { AppUser, Meal, MealPlan, MealRating } from "@/lib/types";
 
 const mealsKey = "meal-spin-meals";
@@ -39,6 +40,7 @@ export function getStoredPlans() {
 
 export function saveStoredPlans(plans: MealPlan[]) {
   write(plansKey, plans);
+  writePlansCookie(plans);
 }
 
 export function getStoredRatings() {

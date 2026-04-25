@@ -5,19 +5,32 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
 import { MealCard } from "@/components/meal-card";
+import { PlanPickerModal, type PlanSlot } from "@/components/plan-picker-modal";
 import { ProtectedPage } from "@/components/protected-page";
 import { SpinWheel } from "@/components/spin-wheel";
 import { countries, tagOptions } from "@/lib/constants";
+import { currentMealType, dateKey, isMealSlotPast, upsertPlan, weekDates } from "@/lib/planner-utils";
 import { findMeal } from "@/lib/recommendations";
 import { getStoredMeals, getStoredPlans, saveStoredPlans } from "@/lib/storage";
 import type { Country, Meal, MealTag } from "@/lib/types";
 
-function todayKey() {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+function firstAvailableSlot(): PlanSlot {
+  const dates = weekDates();
+  const preferred: PlanSlot = { date: dateKey(new Date()), mealType: currentMealType() };
+
+  if (!isMealSlotPast(preferred.date, preferred.mealType)) {
+    return preferred;
+  }
+
+  for (const date of dates) {
+    for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
+      if (!isMealSlotPast(date, mealType)) {
+        return { date, mealType };
+      }
+    }
+  }
+
+  return { date: dates[dates.length - 1], mealType: "dinner" };
 }
 
 export default function SpinPage() {
@@ -28,6 +41,8 @@ export default function SpinPage() {
   const [result, setResult] = useState<Meal | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [addedMealId, setAddedMealId] = useState<string | null>(null);
+  const [planPickerOpen, setPlanPickerOpen] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<PlanSlot>(() => firstAvailableSlot());
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -56,29 +71,34 @@ export default function SpinPage() {
     }, 1500);
   }
 
-  function addToPlan() {
+  function openPlanPicker() {
     if (!result || !user) {
       setMessage("Sign in and spin a meal first.");
       return;
     }
 
-    const today = todayKey();
-    const plans = getStoredPlans();
-    const nextPlans = [
-      ...plans.filter((plan) => !(plan.userId === user.id && plan.date === today && plan.mealType === result.mealType)),
-      {
-        id: `plan-${Date.now()}`,
-        userId: user.id,
-        mealId: result.id,
-        date: today,
-        mealType: result.mealType,
-        createdAt: new Date().toISOString()
-      }
-    ];
+    setSelectedSlot(firstAvailableSlot());
+    setPlanPickerOpen(true);
+  }
+
+  function savePlanSlot() {
+    if (!result || !user || isMealSlotPast(selectedSlot.date, selectedSlot.mealType)) {
+      return;
+    }
+
+    const nextPlans = upsertPlan(getStoredPlans(), {
+      id: `plan-${Date.now()}`,
+      userId: user.id,
+      mealId: result.id,
+      date: selectedSlot.date,
+      mealType: selectedSlot.mealType,
+      createdAt: new Date().toISOString()
+    });
 
     saveStoredPlans(nextPlans);
     setAddedMealId(result.id);
-    setMessage(`${result.name} was added to today's breakfast plan.`);
+    setPlanPickerOpen(false);
+    setMessage(`${result.name} was added to ${selectedSlot.date} ${selectedSlot.mealType}.`);
   }
 
   return (
@@ -140,15 +160,24 @@ export default function SpinPage() {
               <SpinWheel spinning={spinning} onSpin={spin} />
             </div>
             {result ? (
-              <MealCard meal={result} onTryAgain={spin} onAddToPlan={addToPlan} addedToPlan={addedMealId === result.id} />
+              <MealCard meal={result} onTryAgain={spin} onAddToPlan={openPlanPicker} addedToPlan={addedMealId === result.id} />
             ) : (
               <div className="rounded-[2rem] bg-white p-6 text-center shadow-soft">
-                <p className="text-5xl">🍽️</p>
+                <p className="text-5xl">Meal</p>
                 <h2 className="mt-3 text-2xl font-black">Your breakfast card will land here.</h2>
               </div>
             )}
           </div>
         </section>
+
+        <PlanPickerModal
+          meal={result}
+          open={planPickerOpen}
+          selected={selectedSlot}
+          onSelect={setSelectedSlot}
+          onClose={() => setPlanPickerOpen(false)}
+          onSave={savePlanSlot}
+        />
       </AppShell>
     </ProtectedPage>
   );
