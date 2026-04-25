@@ -1,6 +1,7 @@
 "use client";
 
-import { Save, UserRound } from "lucide-react";
+import { Save, Shield, UserRound } from "lucide-react";
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
@@ -42,6 +43,19 @@ export default function ProfilePage() {
           </div>
 
           <form onSubmit={submit} className="mt-6 space-y-4">
+            {user?.role === "admin" ? (
+              <Link
+                href="/admin"
+                className="flex items-center justify-between gap-3 rounded-3xl bg-slate-950 p-4 font-black text-white shadow-soft"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Shield size={19} />
+                  Admin dashboard
+                </span>
+                <span className="text-sm text-white/70">Open</span>
+              </Link>
+            ) : null}
+
             <label className="block">
               <span className="text-sm font-black text-slate-700">Name</span>
               <input

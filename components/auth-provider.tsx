@@ -24,7 +24,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 function makeUser(email: string, name?: string, role: AppUser["role"] = "user", country: Country = "Nigeria"): AppUser {
   return {
     id: role === "admin" ? "demo-admin" : `local-${email.toLowerCase()}`,
-    name: name || email.split("@")[0] || "Meal Spinner",
+    name: name || email.split("@")[0] || "Spin Bite User",
     email,
     role,
     preferredCountry: country,
@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           setUser({
             id: authUser.id,
-            name: profile?.name ?? authUser.user_metadata?.name ?? "Meal Spinner",
+            name: profile?.name ?? authUser.user_metadata?.name ?? "Spin Bite User",
             email: authUser.email ?? "",
             role: profile?.role ?? "user",
             preferredCountry: profile?.preferred_country ?? "Nigeria",
@@ -137,7 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const { data: profile } = await supabase.from("users").select("*").eq("id", authUser.id).maybeSingle();
             setUser({
               id: authUser.id,
-              name: profile?.name ?? authUser.user_metadata?.name ?? "Meal Spinner",
+              name: profile?.name ?? authUser.user_metadata?.name ?? "Spin Bite User",
               email: authUser.email ?? email,
               role: profile?.role ?? "user",
               preferredCountry: profile?.preferred_country ?? "Nigeria",

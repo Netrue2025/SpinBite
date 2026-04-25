@@ -24,7 +24,7 @@ export function ProtectedPage({
         <div className="max-w-sm rounded-[2rem] bg-white p-6 text-center shadow-soft">
           <p className="text-5xl">🔒</p>
           <h1 className="mt-4 text-2xl font-black">Sign in first</h1>
-          <p className="mt-2 text-sm text-slate-600">Meal Spin saves your picks, plans, and tiny victories.</p>
+          <p className="mt-2 text-sm text-slate-600">Spin Bite saves your picks, plans, and tiny victories.</p>
           <Link
             href={`/login?next=${encodeURIComponent(pathname)}`}
             className="mt-5 inline-flex rounded-full bg-slate-950 px-5 py-3 font-bold text-white"

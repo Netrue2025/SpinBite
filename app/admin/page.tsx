@@ -163,7 +163,7 @@ export default function AdminPage() {
               <Shield className="text-amber-300" />
               <div>
                 <p className="text-sm font-black uppercase tracking-wide text-amber-300">Secure admin</p>
-                <h1 className="text-4xl font-black">Meal Spin Control Room</h1>
+                <h1 className="text-4xl font-black">Spin Bite Control Room</h1>
               </div>
             </div>
           </div>

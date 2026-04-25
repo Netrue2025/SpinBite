@@ -24,7 +24,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="grid h-10 w-10 place-items-center rounded-2xl bg-rose-500 text-xl text-white shadow-soft">
               <ChefHat size={21} />
             </span>
-            <span>Meal Spin</span>
+            <span>Spin Bite</span>
           </Link>
 
           <nav className="hidden items-center gap-2 md:flex">

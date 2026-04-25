@@ -3,7 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
 
 export const metadata: Metadata = {
-  title: "Meal Spin",
+  title: "Spin Bite",
   description: "A playful food decision app for choosing what to eat today."
 };
 

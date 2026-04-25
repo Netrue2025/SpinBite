@@ -1,6 +1,6 @@
 "use client";
 
-import { ChefHat, LogIn, Mail, Sparkles, UserPlus } from "lucide-react";
+import { ChefHat, LogIn, Mail, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
@@ -43,7 +43,7 @@ export default function LoginPage() {
               <span className="grid h-10 w-10 place-items-center rounded-2xl bg-rose-500">
                 <ChefHat size={20} />
               </span>
-              Meal Spin
+              Spin Bite
             </Link>
             <h1 className="mt-10 text-4xl font-black leading-tight">{mode === "login" ? "Welcome back." : "Create your plate."}</h1>
           </div>
@@ -53,15 +53,6 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-5 p-6 md:p-8">
-          <button
-            type="button"
-            onClick={signInWithGoogle}
-            className="flex w-full items-center justify-center gap-3 rounded-full bg-amber-400 px-5 py-4 font-black text-slate-950 transition hover:-translate-y-0.5"
-          >
-            <Sparkles size={19} />
-            Continue with Google
-          </button>
-
           <div className="grid grid-cols-2 rounded-full bg-slate-100 p-1">
             {(["login", "signup"] as AuthMode[]).map((item) => (
               <button
