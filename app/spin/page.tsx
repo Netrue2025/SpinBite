@@ -9,29 +9,11 @@ import { PlanPickerModal, type PlanSlot } from "@/components/plan-picker-modal";
 import { ProtectedPage } from "@/components/protected-page";
 import { SpinWheel } from "@/components/spin-wheel";
 import { countries, tagOptions } from "@/lib/constants";
-import { currentMealType, dateKey, isMealSlotPast, upsertPlan, weekDates } from "@/lib/planner-utils";
+import { firstAvailablePlanSlot, isMealSlotPast, upsertPlan } from "@/lib/planner-utils";
 import { findMeal } from "@/lib/recommendations";
 import { getStoredMeals, getStoredPlans, saveStoredPlans } from "@/lib/storage";
 import type { Country, Meal, MealTag } from "@/lib/types";
-
-function firstAvailableSlot(): PlanSlot {
-  const dates = weekDates();
-  const preferred: PlanSlot = { date: dateKey(new Date()), mealType: currentMealType() };
-
-  if (!isMealSlotPast(preferred.date, preferred.mealType)) {
-    return preferred;
-  }
-
-  for (const date of dates) {
-    for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
-      if (!isMealSlotPast(date, mealType)) {
-        return { date, mealType };
-      }
-    }
-  }
-
-  return { date: dates[dates.length - 1], mealType: "dinner" };
-}
+import { playWheelSound } from "@/lib/wheel-sound";
 
 export default function SpinPage() {
   const { user } = useAuth();
@@ -42,7 +24,7 @@ export default function SpinPage() {
   const [spinning, setSpinning] = useState(false);
   const [addedMealId, setAddedMealId] = useState<string | null>(null);
   const [planPickerOpen, setPlanPickerOpen] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<PlanSlot>(() => firstAvailableSlot());
+  const [selectedSlot, setSelectedSlot] = useState<PlanSlot>(() => firstAvailablePlanSlot());
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -63,9 +45,10 @@ export default function SpinPage() {
     setSpinning(true);
     setAddedMealId(null);
     setMessage("");
+    playWheelSound();
 
     window.setTimeout(() => {
-      const meal = findMeal(meals, { country, tag, mealType: "breakfast", previousMealId: result?.id });
+      const meal = findMeal(meals, { country, tag, previousMealId: result?.id });
       setResult(meal);
       setSpinning(false);
     }, 1500);
@@ -77,7 +60,7 @@ export default function SpinPage() {
       return;
     }
 
-    setSelectedSlot(firstAvailableSlot());
+    setSelectedSlot(firstAvailablePlanSlot());
     setPlanPickerOpen(true);
   }
 
@@ -164,7 +147,7 @@ export default function SpinPage() {
             ) : (
               <div className="rounded-[2rem] bg-white p-6 text-center shadow-soft">
                 <p className="text-5xl">Meal</p>
-                <h2 className="mt-3 text-2xl font-black">Your breakfast card will land here.</h2>
+                <h2 className="mt-3 text-2xl font-black">Your meal card will land here.</h2>
               </div>
             )}
           </div>

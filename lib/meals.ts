@@ -13,7 +13,7 @@ export const initialMeals: Meal[] = [
     cookingSteps: ["Peel and blend beans with onion and pepper.", "Whisk with salt until light.", "Scoop into hot oil and fry until golden.", "Serve with warm pap."],
     cookingTime: "25 min",
     difficulty: "Medium",
-    tags: ["cheap", "local"],
+    tags: ["quick", "cheap", "local"],
     createdAt: "2026-01-01T00:00:00.000Z"
   },
   {
@@ -28,7 +28,7 @@ export const initialMeals: Meal[] = [
     cookingSteps: ["Boil yam with salt until tender.", "Saute onion, tomato, and pepper.", "Add eggs and stir softly.", "Plate with the yam."],
     cookingTime: "30 min",
     difficulty: "Easy",
-    tags: ["quick", "local"],
+    tags: ["quick", "healthy", "cheap", "local"],
     createdAt: "2026-01-01T00:00:00.000Z"
   },
   {
@@ -58,7 +58,7 @@ export const initialMeals: Meal[] = [
     cookingSteps: ["Cook tomato stew until reduced.", "Add stock and spices.", "Stir in washed rice.", "Steam on low until fluffy."],
     cookingTime: "55 min",
     difficulty: "Medium",
-    tags: ["local"],
+    tags: ["quick", "cheap", "local"],
     createdAt: "2026-01-01T00:00:00.000Z"
   },
   {
@@ -103,7 +103,7 @@ export const initialMeals: Meal[] = [
     cookingSteps: ["Bake or microwave the potato.", "Mix tuna, corn, and yogurt.", "Split potato open.", "Fill and top with chives."],
     cookingTime: "20 min",
     difficulty: "Easy",
-    tags: ["healthy", "cheap"],
+    tags: ["quick", "healthy", "cheap"],
     createdAt: "2026-01-01T00:00:00.000Z"
   },
   {
@@ -133,7 +133,7 @@ export const initialMeals: Meal[] = [
     cookingSteps: ["Warm milk and oil.", "Mix into tapioca flour.", "Beat in eggs and cheese.", "Bake until puffed."],
     cookingTime: "35 min",
     difficulty: "Medium",
-    tags: ["local", "cheap"],
+    tags: ["quick", "local", "cheap"],
     createdAt: "2026-01-01T00:00:00.000Z"
   },
   {
@@ -178,7 +178,7 @@ export const initialMeals: Meal[] = [
     cookingSteps: ["Whisk batter.", "Cook small rounds on a pan.", "Flip when bubbles appear.", "Stack with fruit and syrup."],
     cookingTime: "20 min",
     difficulty: "Easy",
-    tags: ["cheap"],
+    tags: ["quick", "cheap"],
     createdAt: "2026-01-01T00:00:00.000Z"
   },
   {
@@ -193,7 +193,7 @@ export const initialMeals: Meal[] = [
     cookingSteps: ["Mix yogurt and herbs.", "Layer tortilla with turkey and vegetables.", "Drizzle sauce.", "Roll tightly and slice."],
     cookingTime: "10 min",
     difficulty: "Easy",
-    tags: ["quick", "healthy"],
+    tags: ["quick", "healthy", "cheap"],
     createdAt: "2026-01-01T00:00:00.000Z"
   },
   {
@@ -238,7 +238,7 @@ export const initialMeals: Meal[] = [
     cookingSteps: ["Mix millet flour with water.", "Boil spiced water.", "Whisk in millet mix.", "Serve with peanuts."],
     cookingTime: "18 min",
     difficulty: "Easy",
-    tags: ["cheap", "local"],
+    tags: ["quick", "cheap", "local"],
     createdAt: "2026-01-01T00:00:00.000Z"
   },
   {
@@ -253,7 +253,7 @@ export const initialMeals: Meal[] = [
     cookingSteps: ["Cook beans until soft.", "Add rice and cook together.", "Boil egg and slice salad.", "Serve with stew and shito."],
     cookingTime: "55 min",
     difficulty: "Medium",
-    tags: ["cheap", "local"],
+    tags: ["healthy", "cheap", "local"],
     createdAt: "2026-01-01T00:00:00.000Z"
   },
   {

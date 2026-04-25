@@ -8,35 +8,30 @@ export type SpinFilters = {
 };
 
 export function findMeal(meals: Meal[], filters: SpinFilters) {
-  const mealType = filters.mealType ?? "breakfast";
+  const matchesMealType = (meal: Meal) => (filters.mealType ? meal.mealType === filters.mealType : true);
+  const isNotPrevious = (meal: Meal) => meal.id !== filters.previousMealId;
+
   let pool = meals.filter(
-    (meal) =>
-      meal.mealType === mealType &&
-      meal.country === filters.country &&
-      meal.tags.includes(filters.tag) &&
-      meal.id !== filters.previousMealId
+    (meal) => matchesMealType(meal) && meal.country === filters.country && meal.tags.includes(filters.tag) && isNotPrevious(meal)
   );
 
   if (!pool.length) {
-    pool = meals.filter(
-      (meal) =>
-        meal.mealType === mealType &&
-        meal.country === filters.country &&
-        meal.id !== filters.previousMealId
-    );
+    pool = meals.filter((meal) => matchesMealType(meal) && meal.country === filters.country && meal.tags.includes(filters.tag));
+  }
+
+  if (pool.length < 2) {
+    const countryPool = meals.filter((meal) => matchesMealType(meal) && meal.country === filters.country && isNotPrevious(meal));
+    if (countryPool.length > pool.length) {
+      pool = countryPool;
+    }
   }
 
   if (!pool.length) {
-    pool = meals.filter(
-      (meal) =>
-        meal.mealType === mealType &&
-        meal.tags.includes(filters.tag) &&
-        meal.id !== filters.previousMealId
-    );
+    pool = meals.filter((meal) => matchesMealType(meal) && meal.tags.includes(filters.tag) && isNotPrevious(meal));
   }
 
   if (!pool.length) {
-    pool = meals.filter((meal) => meal.mealType === mealType);
+    pool = meals.filter((meal) => matchesMealType(meal));
   }
 
   return pool[Math.floor(Math.random() * pool.length)];

@@ -30,6 +30,16 @@ textarea {
   font: inherit;
 }
 
+button,
+a[href] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(:disabled):active,
+a[href]:active {
+  transform: scale(0.97);
+}
+
 .meal-wheel {
   background:
     conic-gradient(

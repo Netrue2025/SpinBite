@@ -27,7 +27,27 @@ function write<T>(key: string, value: T) {
 }
 
 export function getStoredMeals() {
-  return read<Meal[]>(mealsKey, initialMeals);
+  const storedMeals = read<Meal[]>(mealsKey, initialMeals);
+  const mergedMeals = storedMeals.map((meal) => {
+    const seedMeal = initialMeals.find((item) => item.id === meal.id);
+
+    if (!seedMeal) {
+      return meal;
+    }
+
+    return {
+      ...meal,
+      tags: Array.from(new Set([...meal.tags, ...seedMeal.tags]))
+    };
+  });
+  const missingSeedMeals = initialMeals.filter((meal) => !mergedMeals.some((storedMeal) => storedMeal.id === meal.id));
+  const nextMeals = [...mergedMeals, ...missingSeedMeals];
+
+  if (typeof window !== "undefined" && JSON.stringify(nextMeals) !== JSON.stringify(storedMeals)) {
+    saveStoredMeals(nextMeals);
+  }
+
+  return nextMeals;
 }
 
 export function saveStoredMeals(meals: Meal[]) {

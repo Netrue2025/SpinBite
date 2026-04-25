@@ -4,21 +4,25 @@ import { CalendarPlus, Clock, Flame, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
+import { PlanPickerModal, type PlanSlot } from "@/components/plan-picker-modal";
 import { ProtectedPage } from "@/components/protected-page";
+import { firstAvailablePlanSlot, isMealSlotPast, upsertPlan } from "@/lib/planner-utils";
 import { getStoredMeals, getStoredPlans, getStoredRatings, saveStoredPlans, saveStoredRatings } from "@/lib/storage";
 import type { Meal, MealRating } from "@/lib/types";
 
 const ratings: Array<{ id: MealRating["rating"]; label: string }> = [
-  { id: "loved", label: "😍 Loved it" },
-  { id: "good", label: "🙂 Good" },
-  { id: "okay", label: "😐 Okay" },
-  { id: "not_for_me", label: "👎 Not for me" }
+  { id: "loved", label: "Loved it" },
+  { id: "good", label: "Good" },
+  { id: "okay", label: "Okay" },
+  { id: "not_for_me", label: "Not for me" }
 ];
 
 export default function CookingGuidePage({ params }: { params: { id: string } }) {
   const { user } = useAuth();
   const [meal, setMeal] = useState<Meal | null>(null);
   const [selectedRating, setSelectedRating] = useState<MealRating["rating"] | null>(null);
+  const [planPickerOpen, setPlanPickerOpen] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<PlanSlot>(() => firstAvailablePlanSlot());
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -53,25 +57,33 @@ export default function CookingGuidePage({ params }: { params: { id: string } })
     setMessage("Rating saved.");
   }
 
-  function addToToday() {
+  function openPlanPicker() {
     if (!user || !meal) {
+      setMessage("Sign in and choose a meal first.");
       return;
     }
 
-    const today = new Date().toISOString().slice(0, 10);
-    const plans = getStoredPlans();
-    saveStoredPlans([
-      ...plans.filter((plan) => !(plan.userId === user.id && plan.date === today && plan.mealType === meal.mealType)),
-      {
-        id: `plan-${Date.now()}`,
-        userId: user.id,
-        mealId: meal.id,
-        date: today,
-        mealType: meal.mealType,
-        createdAt: new Date().toISOString()
-      }
-    ]);
-    setMessage("Added to today's plan.");
+    setSelectedSlot(firstAvailablePlanSlot());
+    setPlanPickerOpen(true);
+  }
+
+  function savePlanSlot() {
+    if (!user || !meal || isMealSlotPast(selectedSlot.date, selectedSlot.mealType)) {
+      return;
+    }
+
+    const nextPlans = upsertPlan(getStoredPlans(), {
+      id: `plan-${Date.now()}`,
+      userId: user.id,
+      mealId: meal.id,
+      date: selectedSlot.date,
+      mealType: selectedSlot.mealType,
+      createdAt: new Date().toISOString()
+    });
+
+    saveStoredPlans(nextPlans);
+    setPlanPickerOpen(false);
+    setMessage(`${meal.name} was added to ${selectedSlot.date} ${selectedSlot.mealType}.`);
   }
 
   return (
@@ -79,7 +91,7 @@ export default function CookingGuidePage({ params }: { params: { id: string } })
       <AppShell>
         {!meal ? (
           <div className="rounded-[2rem] bg-white p-8 text-center shadow-soft">
-            <p className="text-5xl">🍳</p>
+            <p className="text-5xl">Meal</p>
             <h1 className="mt-3 text-2xl font-black">Meal not found</h1>
           </div>
         ) : (
@@ -102,7 +114,8 @@ export default function CookingGuidePage({ params }: { params: { id: string } })
                     </span>
                   </div>
                   <button
-                    onClick={addToToday}
+                    type="button"
+                    onClick={openPlanPicker}
                     className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-5 py-4 font-black text-white"
                   >
                     <CalendarPlus size={18} />
@@ -156,6 +169,7 @@ export default function CookingGuidePage({ params }: { params: { id: string } })
                 <div className="mt-4 grid gap-2 sm:grid-cols-2">
                   {ratings.map((rating) => (
                     <button
+                      type="button"
                       key={rating.id}
                       onClick={() => saveRating(rating.id)}
                       className={`rounded-2xl px-4 py-3 text-left font-black ${
@@ -171,6 +185,15 @@ export default function CookingGuidePage({ params }: { params: { id: string } })
             </div>
           </section>
         )}
+
+        <PlanPickerModal
+          meal={meal}
+          open={planPickerOpen}
+          selected={selectedSlot}
+          onSelect={setSelectedSlot}
+          onClose={() => setPlanPickerOpen(false)}
+          onSave={savePlanSlot}
+        />
       </AppShell>
     </ProtectedPage>
   );

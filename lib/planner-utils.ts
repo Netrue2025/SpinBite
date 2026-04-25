@@ -60,6 +60,25 @@ export function isMealSlotPast(date: string, mealType: MealType, now = new Date(
   return false;
 }
 
+export function firstAvailablePlanSlot(now = new Date()) {
+  const dates = weekDates(now);
+  const preferred = { date: dateKey(now), mealType: currentMealType(now) };
+
+  if (!isMealSlotPast(preferred.date, preferred.mealType, now)) {
+    return preferred;
+  }
+
+  for (const date of dates) {
+    for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
+      if (!isMealSlotPast(date, mealType, now)) {
+        return { date, mealType };
+      }
+    }
+  }
+
+  return { date: dates[dates.length - 1], mealType: "dinner" as const };
+}
+
 export function upsertPlan(plans: MealPlan[], plan: MealPlan) {
   return [
     ...plans.filter((item) => !(item.userId === plan.userId && item.date === plan.date && item.mealType === plan.mealType)),
