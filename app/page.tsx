@@ -12,7 +12,7 @@ export default function LandingPage() {
             Spin Bite
           </Link>
           <div className="space-y-4">
-            <h1 className="max-w-xl text-balance text-5xl font-black leading-tight text-slate-950 md:text-7xl">Spin Bite</h1>
+            <h1 className="max-w-xl text-balance text-5xl font-black leading-tight text-slate-950 md:text-7xl">SPIN. PICK. COOK. EAT.</h1>
             <p className="max-w-lg text-lg font-semibold leading-8 text-slate-700">
               Decide what to eat today in 10 seconds.
             </p>
