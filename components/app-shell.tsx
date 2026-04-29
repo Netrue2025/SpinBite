@@ -17,11 +17,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
 
   return (
-    <div className="min-h-screen pb-24 md:pb-0">
+    <div className="min-h-screen pb-20 md:pb-0">
       <header className="sticky top-0 z-30 border-b border-white/60 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2.5 md:py-3">
           <Link href="/dashboard" className="flex items-center gap-2 font-black">
-            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-rose-500 text-xl text-white shadow-soft">
+            <span className="grid h-9 w-9 place-items-center rounded-2xl bg-rose-500 text-xl text-white shadow-soft md:h-10 md:w-10">
               <ChefHat size={21} />
             </span>
             <span>Spin Bite</span>
@@ -59,7 +59,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <button
             onClick={signOut}
-            className="grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 shadow-sm transition hover:bg-slate-950 hover:text-white"
+            className="grid h-9 w-9 place-items-center rounded-full bg-white text-slate-700 shadow-sm transition hover:bg-slate-950 hover:text-white md:h-10 md:w-10"
             title="Sign out"
           >
             <LogOut size={18} />
@@ -67,9 +67,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6 md:py-9">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-4 md:py-9">{children}</main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/70 bg-white/90 px-3 py-2 backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/70 bg-white/90 px-3 py-1.5 backdrop-blur md:hidden">
         <div className="mx-auto grid max-w-md grid-cols-4 gap-2">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -78,7 +78,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`grid place-items-center rounded-2xl px-2 py-2 text-xs font-black ${
+                className={`grid place-items-center rounded-2xl px-2 py-1.5 text-xs font-black ${
                   active ? "bg-slate-950 text-white" : "text-slate-600"
                 }`}
               >

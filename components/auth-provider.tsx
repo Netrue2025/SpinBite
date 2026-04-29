@@ -15,7 +15,7 @@ type AuthContextValue = {
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (name: string, email: string, password: string) => Promise<void>;
   demoLogin: (role?: AppUser["role"]) => void;
-  updateProfile: (updates: Partial<Pick<AppUser, "name" | "preferredCountry">>) => void;
+  updateProfile: (updates: Partial<Pick<AppUser, "name" | "preferredCountry">>) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -188,17 +188,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(demo);
         router.push(role === "admin" ? "/admin" : "/dashboard");
       },
-      updateProfile(updates) {
-        setUser((current) => {
-          if (!current) {
-            return current;
-          }
+      async updateProfile(updates) {
+        if (!user) {
+          return;
+        }
 
-          const next = { ...current, ...updates };
+        const next = { ...user, ...updates };
+
+        if (hasSupabaseConfig && supabase) {
+          const { error } = await supabase
+            .from("users")
+            .update({
+              name: next.name,
+              preferred_country: next.preferredCountry
+            })
+            .eq("id", next.id);
+
+          if (error) {
+            throw error;
+          }
+        } else {
           const users = getStoredUsers(next).map((storedUser) => (storedUser.id === next.id ? next : storedUser));
           saveStoredUsers(users);
-          return next;
-        });
+        }
+
+        setUser(next);
       },
       async signOut() {
         if (hasSupabaseConfig && supabase) {

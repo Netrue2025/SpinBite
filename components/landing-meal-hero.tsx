@@ -4,7 +4,7 @@ import { Clock, Utensils } from "lucide-react";
 import { useEffect, useState } from "react";
 import { initialMeals } from "@/lib/meals";
 import { currentMealType, decodePlansCookie, plannedMealForNow, planCookieName } from "@/lib/planner-utils";
-import { getStoredMeals } from "@/lib/storage";
+import { loadMeals } from "@/lib/supabase-data";
 import type { Meal } from "@/lib/types";
 
 function cookieValue(name: string) {
@@ -32,13 +32,13 @@ export function LandingMealHero() {
   const [slot, setSlot] = useState(currentMealType());
 
   useEffect(() => {
-    const storedMeals = getStoredMeals();
-    setMeals(storedMeals);
+    let activeMeals = initialMeals;
+    let mounted = true;
 
     function updateMeal() {
       const now = new Date();
       const plans = decodePlansCookie(cookieValue(planCookieName));
-      const planned = plannedMealForNow(plans, storedMeals, now);
+      const planned = plannedMealForNow(plans, activeMeals, now);
 
       setSlot(currentMealType(now));
 
@@ -49,13 +49,30 @@ export function LandingMealHero() {
       }
 
       setIsPlanned(false);
-      setMeal((current) => randomMeal(storedMeals, current.id));
+      setMeal((current) => randomMeal(activeMeals, current.id));
     }
 
-    updateMeal();
+    loadMeals()
+      .then((loadedMeals) => {
+        if (!mounted || !loadedMeals.length) {
+          return;
+        }
+
+        activeMeals = loadedMeals;
+        setMeals(loadedMeals);
+        updateMeal();
+      })
+      .catch(() => {
+        activeMeals = initialMeals;
+        updateMeal();
+      });
+
     const timer = window.setInterval(updateMeal, 20000);
 
-    return () => window.clearInterval(timer);
+    return () => {
+      mounted = false;
+      window.clearInterval(timer);
+    };
   }, []);
 
   return (

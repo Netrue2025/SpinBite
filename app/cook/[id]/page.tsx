@@ -6,8 +6,8 @@ import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
 import { PlanPickerModal, type PlanSlot } from "@/components/plan-picker-modal";
 import { ProtectedPage } from "@/components/protected-page";
-import { firstAvailablePlanSlot, isMealSlotPast, upsertPlan } from "@/lib/planner-utils";
-import { getStoredMeals, getStoredPlans, getStoredRatings, saveStoredPlans, saveStoredRatings } from "@/lib/storage";
+import { firstAvailablePlanSlot, isMealSlotPast } from "@/lib/planner-utils";
+import { loadMeal, loadRatings, savePlan, saveRating as persistRating } from "@/lib/supabase-data";
 import type { Meal, MealRating } from "@/lib/types";
 
 const ratings: Array<{ id: MealRating["rating"]; label: string }> = [
@@ -26,35 +26,46 @@ export default function CookingGuidePage({ params }: { params: { id: string } })
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const meals = getStoredMeals();
-    setMeal(meals.find((item) => item.id === params.id) ?? null);
+    let mounted = true;
 
-    if (user) {
-      const savedRating = getStoredRatings().find((rating) => rating.userId === user.id && rating.mealId === params.id);
-      setSelectedRating(savedRating?.rating ?? null);
-    }
+    Promise.all([loadMeal(params.id), user ? loadRatings(user.id) : Promise.resolve([])])
+      .then(([mealItem, savedRatings]) => {
+        if (mounted) {
+          setMeal(mealItem);
+          const savedRating = savedRatings.find((rating) => rating.userId === user?.id && rating.mealId === params.id);
+          setSelectedRating(savedRating?.rating ?? null);
+        }
+      })
+      .catch((error) => {
+        if (mounted) {
+          setMessage(error instanceof Error ? error.message : "Could not load this meal from Supabase.");
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, [params.id, user]);
 
-  function saveRating(rating: MealRating["rating"]) {
+  async function saveRating(rating: MealRating["rating"]) {
     if (!user || !meal) {
       return;
     }
 
-    const allRatings = getStoredRatings();
-    const nextRatings = [
-      ...allRatings.filter((item) => !(item.userId === user.id && item.mealId === meal.id)),
-      {
+    try {
+      const savedRating = await persistRating({
         id: `rating-${Date.now()}`,
         userId: user.id,
         mealId: meal.id,
         rating,
         createdAt: new Date().toISOString()
-      }
-    ];
+      });
 
-    saveStoredRatings(nextRatings);
-    setSelectedRating(rating);
-    setMessage("Rating saved.");
+      setSelectedRating(savedRating.rating);
+      setMessage("Rating saved.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not save your rating.");
+    }
   }
 
   function openPlanPicker() {
@@ -67,23 +78,26 @@ export default function CookingGuidePage({ params }: { params: { id: string } })
     setPlanPickerOpen(true);
   }
 
-  function savePlanSlot() {
+  async function savePlanSlot() {
     if (!user || !meal || isMealSlotPast(selectedSlot.date, selectedSlot.mealType)) {
       return;
     }
 
-    const nextPlans = upsertPlan(getStoredPlans(), {
-      id: `plan-${Date.now()}`,
-      userId: user.id,
-      mealId: meal.id,
-      date: selectedSlot.date,
-      mealType: selectedSlot.mealType,
-      createdAt: new Date().toISOString()
-    });
+    try {
+      await savePlan({
+        id: `plan-${Date.now()}`,
+        userId: user.id,
+        mealId: meal.id,
+        date: selectedSlot.date,
+        mealType: selectedSlot.mealType,
+        createdAt: new Date().toISOString()
+      });
 
-    saveStoredPlans(nextPlans);
-    setPlanPickerOpen(false);
-    setMessage(`${meal.name} was added to ${selectedSlot.date} ${selectedSlot.mealType}.`);
+      setPlanPickerOpen(false);
+      setMessage(`${meal.name} was added to ${selectedSlot.date} ${selectedSlot.mealType}.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not save your plan.");
+    }
   }
 
   return (

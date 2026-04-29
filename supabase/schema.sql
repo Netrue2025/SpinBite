@@ -88,6 +88,13 @@ alter table public.meals enable row level security;
 alter table public.meal_ratings enable row level security;
 alter table public.meal_plans enable row level security;
 
+grant usage on schema public to anon, authenticated;
+grant select on public.meals to anon, authenticated;
+grant all on public.meals to authenticated;
+grant select, update on public.users to authenticated;
+grant select, insert, update, delete on public.meal_ratings to authenticated;
+grant select, insert, update, delete on public.meal_plans to authenticated;
+
 drop policy if exists "Users can read their own profile" on public.users;
 create policy "Users can read their own profile"
 on public.users for select
@@ -100,9 +107,10 @@ using (auth.uid() = id or public.is_admin())
 with check (auth.uid() = id or public.is_admin());
 
 drop policy if exists "Authenticated users can read meals" on public.meals;
-create policy "Authenticated users can read meals"
+drop policy if exists "Public can read meals" on public.meals;
+create policy "Public can read meals"
 on public.meals for select
-to authenticated
+to anon, authenticated
 using (true);
 
 drop policy if exists "Admins can write meals" on public.meals;

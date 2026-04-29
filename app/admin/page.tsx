@@ -5,15 +5,9 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { ProtectedPage } from "@/components/protected-page";
 import { countries, mealTypes, tagOptions } from "@/lib/constants";
-import {
-  getStoredMeals,
-  getStoredPlans,
-  getStoredRatings,
-  getStoredUsers,
-  saveStoredMeals
-} from "@/lib/storage";
+import { loadMeals, loadPlans, loadRatings, loadUsers, removeMeal, saveMeal } from "@/lib/supabase-data";
 import { hasSupabaseConfig, supabase } from "@/lib/supabase";
-import type { Country, Difficulty, Meal, MealTag, MealType } from "@/lib/types";
+import type { AppUser, Country, Difficulty, Meal, MealPlan, MealRating, MealTag, MealType } from "@/lib/types";
 
 type MealForm = {
   id?: string;
@@ -47,14 +41,33 @@ const emptyForm: MealForm = {
 export default function AdminPage() {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [form, setForm] = useState<MealForm>(emptyForm);
-  const [users, setUsers] = useState(getStoredUsers());
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const [ratings, setRatings] = useState<MealRating[]>([]);
+  const [plans, setPlans] = useState<MealPlan[]>([]);
   const [imageStatus, setImageStatus] = useState("");
-  const ratings = useMemo(() => getStoredRatings(), []);
-  const plans = useMemo(() => getStoredPlans(), []);
+  const [dataStatus, setDataStatus] = useState("");
 
   useEffect(() => {
-    setMeals(getStoredMeals());
-    setUsers(getStoredUsers());
+    let mounted = true;
+
+    Promise.all([loadMeals(), loadUsers(), loadRatings(), loadPlans()])
+      .then(([mealItems, userItems, ratingItems, planItems]) => {
+        if (mounted) {
+          setMeals(mealItems);
+          setUsers(userItems);
+          setRatings(ratingItems);
+          setPlans(planItems);
+        }
+      })
+      .catch((error) => {
+        if (mounted) {
+          setDataStatus(error instanceof Error ? error.message : "Could not load admin data from Supabase.");
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const mostSelected = useMemo(() => {
@@ -96,10 +109,14 @@ export default function AdminPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function deleteMeal(id: string) {
-    const nextMeals = meals.filter((meal) => meal.id !== id);
-    setMeals(nextMeals);
-    saveStoredMeals(nextMeals);
+  async function deleteMeal(id: string) {
+    try {
+      await removeMeal(id);
+      setMeals((current) => current.filter((meal) => meal.id !== id));
+      setDataStatus("");
+    } catch (error) {
+      setDataStatus(error instanceof Error ? error.message : "Could not delete meal from Supabase.");
+    }
   }
 
   async function onImageUpload(event: ChangeEvent<HTMLInputElement>) {
@@ -130,7 +147,7 @@ export default function AdminPage() {
     reader.readAsDataURL(file);
   }
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const meal: Meal = {
       id: form.id ?? `meal-${Date.now()}`,
@@ -148,10 +165,18 @@ export default function AdminPage() {
       createdAt: new Date().toISOString()
     };
 
-    const nextMeals = form.id ? meals.map((item) => (item.id === form.id ? meal : item)) : [meal, ...meals];
-    setMeals(nextMeals);
-    saveStoredMeals(nextMeals);
-    setForm(emptyForm);
+    try {
+      const savedMeal = await saveMeal(meal);
+      setMeals((current) =>
+        current.some((item) => item.id === savedMeal.id)
+          ? current.map((item) => (item.id === savedMeal.id ? savedMeal : item))
+          : [savedMeal, ...current]
+      );
+      setForm(emptyForm);
+      setDataStatus("");
+    } catch (error) {
+      setDataStatus(error instanceof Error ? error.message : "Could not save meal to Supabase.");
+    }
   }
 
   return (
@@ -167,6 +192,7 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
+          {dataStatus ? <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-black text-rose-700">{dataStatus}</p> : null}
 
           <div className="grid gap-6 xl:grid-cols-[.9fr_1.1fr]">
             <form onSubmit={submit} className="space-y-4 rounded-[2rem] bg-white p-5 shadow-soft">

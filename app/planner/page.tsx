@@ -9,26 +9,48 @@ import { ProtectedPage } from "@/components/protected-page";
 import { mealTypes, weekdays } from "@/lib/constants";
 import { isMealSlotPast, weekDates } from "@/lib/planner-utils";
 import { findMeal } from "@/lib/recommendations";
-import { getStoredMeals, getStoredPlans, saveStoredPlans } from "@/lib/storage";
+import { loadMeals, loadPlans, savePlan } from "@/lib/supabase-data";
 import type { Meal, MealPlan, MealType } from "@/lib/types";
 
 export default function PlannerPage() {
   const { user } = useAuth();
   const [meals, setMeals] = useState<Meal[]>([]);
   const [plans, setPlans] = useState<MealPlan[]>([]);
+  const [message, setMessage] = useState("");
 
   const dates = useMemo(() => weekDates(), []);
 
   useEffect(() => {
-    setMeals(getStoredMeals());
-    setPlans(getStoredPlans());
-  }, []);
+    if (!user) {
+      return;
+    }
+
+    let mounted = true;
+
+    Promise.all([loadMeals(), loadPlans(user.id)])
+      .then(([mealItems, planItems]) => {
+        if (mounted) {
+          setMeals(mealItems);
+          setPlans(planItems);
+          setMessage(mealItems.length ? "" : "No meals were found in Supabase. Add meals from the admin page or run the seed SQL.");
+        }
+      })
+      .catch((error) => {
+        if (mounted) {
+          setMessage(error instanceof Error ? error.message : "Could not load planner data from Supabase.");
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [user]);
 
   function mealFor(plan?: MealPlan) {
     return plan ? meals.find((meal) => meal.id === plan.mealId) : undefined;
   }
 
-  function replaceMeal(date: string, mealType: MealType) {
+  async function replaceMeal(date: string, mealType: MealType) {
     if (!user || isMealSlotPast(date, mealType)) {
       return;
     }
@@ -43,30 +65,31 @@ export default function PlannerPage() {
       return;
     }
 
-    const nextPlans = [
-      ...plans.filter((plan) => !(plan.userId === user.id && plan.date === date && plan.mealType === mealType)),
-      {
+    try {
+      const savedPlan = await savePlan({
         id: `plan-${Date.now()}-${date}-${mealType}`,
         userId: user.id,
         mealId: picked.id,
         date,
         mealType,
         createdAt: new Date().toISOString()
-      }
-    ];
+      });
 
-    setPlans(nextPlans);
-    saveStoredPlans(nextPlans);
+      setPlans((current) => [
+        ...current.filter((plan) => !(plan.userId === user.id && plan.date === date && plan.mealType === mealType)),
+        savedPlan
+      ]);
+      setMessage("");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not save your plan.");
+    }
   }
 
-  function fillWeek() {
+  async function fillWeek() {
     if (!user) {
       return;
     }
 
-    const freshPlans = plans.filter(
-      (plan) => !(plan.userId === user.id && dates.includes(plan.date) && mealTypes.includes(plan.mealType))
-    );
     const generated = dates.flatMap((date) =>
       mealTypes.flatMap((mealType) => {
         if (isMealSlotPast(date, mealType)) {
@@ -93,9 +116,17 @@ export default function PlannerPage() {
         };
       })
     );
-    const nextPlans = [...freshPlans, ...generated];
-    setPlans(nextPlans);
-    saveStoredPlans(nextPlans);
+
+    try {
+      const savedPlans = await Promise.all(generated.map((plan) => savePlan(plan)));
+      setPlans((current) => [
+        ...current.filter((plan) => !(plan.userId === user.id && dates.includes(plan.date) && mealTypes.includes(plan.mealType))),
+        ...savedPlans
+      ]);
+      setMessage("");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not save this week to Supabase.");
+    }
   }
 
   return (
@@ -112,6 +143,7 @@ export default function PlannerPage() {
               Plan week
             </button>
           </div>
+          {message ? <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-black text-rose-700">{message}</p> : null}
 
           <div className="grid gap-4">
             {dates.map((date, index) => (

@@ -22,10 +22,14 @@ export default function ProfilePage() {
     }
   }, [user]);
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    updateProfile({ name, preferredCountry });
-    setSaved(true);
+    try {
+      await updateProfile({ name, preferredCountry });
+      setSaved(true);
+    } catch {
+      setSaved(false);
+    }
   }
 
   return (
