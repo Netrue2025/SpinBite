@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeDollarSign, CalendarPlus, MapPin, Salad, Zap } from "lucide-react";
+import { CalendarPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
@@ -15,12 +15,22 @@ import { loadMeals, savePlan } from "@/lib/supabase-data";
 import type { Country, Meal, MealTag } from "@/lib/types";
 import { playWheelSound } from "@/lib/wheel-sound";
 
-const tagIcons = {
-  quick: Zap,
-  healthy: Salad,
-  cheap: BadgeDollarSign,
-  local: MapPin
-};
+function preloadImage(src: string) {
+  return new Promise<void>((resolve) => {
+    const image = new Image();
+    const timeout = window.setTimeout(resolve, 2500);
+
+    image.onload = () => {
+      window.clearTimeout(timeout);
+      resolve();
+    };
+    image.onerror = () => {
+      window.clearTimeout(timeout);
+      resolve();
+    };
+    image.src = src;
+  });
+}
 
 export default function SpinPage() {
   const { user } = useAuth();
@@ -34,6 +44,20 @@ export default function SpinPage() {
   const [selectedSlot, setSelectedSlot] = useState<PlanSlot>(() => firstAvailablePlanSlot());
   const [message, setMessage] = useState("");
   const previewMeal = meals.find((meal) => meal.country === country) ?? meals[0];
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedCountry = params.get("country") as Country | null;
+    const requestedTag = params.get("tag") as MealTag | null;
+
+    if (requestedCountry && countries.includes(requestedCountry)) {
+      setCountry(requestedCountry);
+    }
+
+    if (requestedTag && tagOptions.some((option) => option.id === requestedTag)) {
+      setTag(requestedTag);
+    }
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -57,7 +81,9 @@ export default function SpinPage() {
   }, []);
 
   useEffect(() => {
-    if (user?.preferredCountry) {
+    const hasCountryParam = new URLSearchParams(window.location.search).has("country");
+
+    if (user?.preferredCountry && !hasCountryParam) {
       setCountry(user.preferredCountry);
     }
   }, [user?.preferredCountry]);
@@ -72,8 +98,13 @@ export default function SpinPage() {
     setMessage("");
     playWheelSound();
 
-    window.setTimeout(() => {
+    window.setTimeout(async () => {
       const meal = findMeal(meals, { country, tag, previousMealId: result?.id });
+
+      if (meal?.imageUrl) {
+        await preloadImage(meal.imageUrl);
+      }
+
       setResult(meal);
       setSpinning(false);
     }, 1500);
@@ -115,59 +146,15 @@ export default function SpinPage() {
   return (
     <ProtectedPage>
       <AppShell>
-        <section className="grid gap-3 lg:grid-cols-[.72fr_1.28fr] lg:gap-6">
-          <div className="order-2 rounded-[1.5rem] bg-white p-4 shadow-soft md:rounded-[1.75rem] md:p-5 lg:order-1">
-            <p className="text-xs font-black uppercase tracking-wide text-rose-500 md:text-sm">Spin meal</p>
-            <h1 className="mt-1 text-2xl font-black leading-tight md:mt-2 md:text-4xl">What would you like to eat today?</h1>
-
-            <div className="mt-4 grid grid-cols-4 gap-2 md:grid-cols-2">
-              {tagOptions.map((option) => {
-                const Icon = tagIcons[option.id];
-                return (
-                  <button
-                    type="button"
-                    key={option.id}
-                    onClick={() => setTag(option.id)}
-                    className={`grid place-items-center gap-1 rounded-2xl px-2 py-3 text-xs font-black transition md:flex md:justify-center md:gap-2 md:px-3 md:py-4 md:text-sm ${
-                      tag === option.id ? "bg-slate-950 text-white shadow-soft" : "bg-amber-100 text-slate-950 hover:bg-amber-300"
-                    }`}
-                  >
-                    <Icon size={18} />
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            <label className="mt-4 block md:mt-5">
-              <span className="text-xs font-black text-slate-700 md:text-sm">Country / cuisine</span>
-              <select
-                value={country}
-                onChange={(event) => setCountry(event.target.value as Country)}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold outline-none focus:border-emerald-500 md:px-4 md:py-4 md:text-base"
-              >
-                {countries.map((item) => (
-                  <option key={item}>{item}</option>
-                ))}
-              </select>
-            </label>
-
-            {message ? (
-              <p className="mt-3 flex items-center gap-2 rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-800 md:mt-4 md:px-4 md:py-3 md:text-sm">
-                <CalendarPlus size={17} />
-                {message}
-              </p>
-            ) : null}
-          </div>
-
-          <div className="order-1 grid gap-3 lg:order-2">
+        <section className="grid gap-3 lg:grid-cols-[1fr_.42fr] lg:items-start lg:gap-5">
+          <div className="grid gap-3">
             {result ? (
               <div>
-                <MealCard meal={result} onTryAgain={spin} onAddToPlan={openPlanPicker} addedToPlan={addedMealId === result.id} />
+                <MealCard meal={result} onAddToPlan={openPlanPicker} addedToPlan={addedMealId === result.id} />
               </div>
             ) : previewMeal ? (
               <div className="overflow-hidden rounded-[1.5rem] bg-slate-950 text-white shadow-soft md:rounded-[1.75rem]">
-                <div className="relative h-72 md:h-[28rem]">
+                <div className="relative h-[45vh] min-h-72 md:h-[31rem]">
                   <img src={previewMeal.imageUrl} alt={previewMeal.name} className="h-full w-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent" />
                   <div className="absolute left-4 right-4 top-4 flex items-center justify-between gap-3">
@@ -188,6 +175,15 @@ export default function SpinPage() {
                 <h2 className="text-2xl font-black">Your meal card will land here.</h2>
               </div>
             )}
+            {message ? (
+              <p className="flex items-center gap-2 rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-800 md:px-4 md:py-3 md:text-sm">
+                <CalendarPlus size={17} />
+                {message}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="grid gap-3">
             <div className="rounded-[1.5rem] bg-white p-3 shadow-soft md:rounded-[1.75rem] md:p-4">
               <SpinWheel spinning={spinning} onSpin={spin} />
             </div>

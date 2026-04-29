@@ -18,11 +18,15 @@ export function MealCard({
   addedToPlan?: boolean;
   compact?: boolean;
 }) {
+  const actionGridClass = compact
+    ? "grid grid-cols-3 gap-1.5 text-xs md:gap-2 md:text-base"
+    : `grid gap-2 ${onTryAgain && onAddToPlan ? "sm:grid-cols-3" : "grid-cols-2"}`;
+
   return (
     <article className={`animate-pop overflow-hidden bg-white shadow-soft ${compact ? "rounded-[1.35rem] md:rounded-[2rem]" : "rounded-[1.5rem] md:rounded-[1.75rem]"}`}>
       <div className={compact ? "grid grid-cols-[6.75rem_1fr] md:block" : ""}>
-        <div className={`relative ${compact ? "min-h-[10.75rem] md:h-60" : "h-72 md:h-[28rem]"}`}>
-          <img src={meal.imageUrl} alt={meal.name} className="h-full w-full object-cover" />
+        <div className={`relative ${compact ? "min-h-[10.75rem] md:h-60" : "h-60 sm:h-72 md:h-[28rem]"}`}>
+          <img key={`${meal.id}-${meal.imageUrl}`} src={meal.imageUrl} alt={meal.name} className="h-full w-full object-cover" />
           {!compact ? <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/10 to-transparent" /> : null}
           <div className={`absolute rounded-full bg-white/90 font-black ${compact ? "left-2 top-2 px-2 py-1 text-[10px] md:left-4 md:top-4 md:px-3 md:text-sm" : "left-4 top-4 px-3 py-2 text-xs text-slate-950"}`}>
             {meal.country}
@@ -61,7 +65,7 @@ export function MealCard({
             </span>
           </div>
 
-          <div className={compact ? "grid grid-cols-3 gap-1.5 text-xs md:gap-2 md:text-base" : "grid gap-2 sm:grid-cols-3"}>
+          <div className={actionGridClass}>
             {onTryAgain ? (
               <button
                 type="button"
