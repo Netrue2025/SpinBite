@@ -1,4 +1,5 @@
 import { hasSupabaseConfig, supabase } from "@/lib/supabase";
+import { resolveMealImageUrl } from "@/lib/meal-image-overrides";
 import {
   getStoredMeals,
   getStoredPlans,
@@ -67,7 +68,7 @@ function toMeal(row: MealRow): Meal {
     description: row.description,
     country: row.country,
     mealType: row.meal_type,
-    imageUrl: row.image_url,
+    imageUrl: resolveMealImageUrl(row.id, row.image_url),
     videoUrl: row.video_url,
     ingredients: row.ingredients,
     cookingSteps: row.cooking_steps,

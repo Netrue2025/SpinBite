@@ -4,6 +4,7 @@ import { Clock, Utensils } from "lucide-react";
 import { useEffect, useState } from "react";
 import { initialMeals } from "@/lib/meals";
 import { currentMealType, decodePlansCookie, plannedMealForNow, planCookieName } from "@/lib/planner-utils";
+import { hasSupabaseConfig } from "@/lib/supabase";
 import { loadMeals } from "@/lib/supabase-data";
 import type { Meal } from "@/lib/types";
 
@@ -22,17 +23,17 @@ function cookieValue(name: string) {
 
 function randomMeal(meals: Meal[], previousId?: string) {
   const pool = meals.length > 1 ? meals.filter((meal) => meal.id !== previousId) : meals;
-  return pool[Math.floor(Math.random() * pool.length)] ?? initialMeals[0];
+  return pool[Math.floor(Math.random() * pool.length)] ?? null;
 }
 
 export function LandingMealHero() {
-  const [meals, setMeals] = useState<Meal[]>(initialMeals);
-  const [meal, setMeal] = useState<Meal>(initialMeals[0]);
+  const [meals, setMeals] = useState<Meal[]>(hasSupabaseConfig ? [] : initialMeals);
+  const [meal, setMeal] = useState<Meal | null>(hasSupabaseConfig ? null : initialMeals[0]);
   const [isPlanned, setIsPlanned] = useState(false);
   const [slot, setSlot] = useState(currentMealType());
 
   useEffect(() => {
-    let activeMeals = initialMeals;
+    let activeMeals = hasSupabaseConfig ? [] : initialMeals;
     let mounted = true;
 
     function updateMeal() {
@@ -49,12 +50,12 @@ export function LandingMealHero() {
       }
 
       setIsPlanned(false);
-      setMeal((current) => randomMeal(activeMeals, current.id));
+      setMeal((current) => randomMeal(activeMeals, current?.id));
     }
 
     loadMeals()
       .then((loadedMeals) => {
-        if (!mounted || !loadedMeals.length) {
+        if (!mounted) {
           return;
         }
 
@@ -63,7 +64,7 @@ export function LandingMealHero() {
         updateMeal();
       })
       .catch(() => {
-        activeMeals = initialMeals;
+        activeMeals = hasSupabaseConfig ? [] : initialMeals;
         updateMeal();
       });
 
@@ -78,16 +79,25 @@ export function LandingMealHero() {
   return (
     <div className="relative">
       <div className="absolute -left-4 top-8 z-10 animate-floaty rounded-3xl bg-white px-4 py-3 font-black shadow-soft">
-        {isPlanned ? `${slot} planned` : "Fresh pick"}
+        {isPlanned ? `${slot} planned` : meal ? "Fresh pick" : "Supabase"}
       </div>
       <div className="overflow-hidden rounded-[2rem] bg-white shadow-soft">
-        <img src={meal.imageUrl} alt={meal.name} className="h-80 w-full object-cover md:h-[32rem]" />
+        {meal ? (
+          <img src={meal.imageUrl} alt={meal.name} className="h-80 w-full object-cover md:h-[32rem]" />
+        ) : (
+          <div className="grid h-80 place-items-center bg-slate-950 px-6 text-center text-white md:h-[32rem]">
+            <div>
+              <h2 className="text-3xl font-black">No Supabase meals yet</h2>
+              <p className="mt-2 text-sm font-semibold text-white/75">Run the seed SQL or add meals from the admin page.</p>
+            </div>
+          </div>
+        )}
         <div className="space-y-3 p-5">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-2xl font-black">{meal.name}</h2>
-            <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-black text-emerald-900">{meal.country}</span>
+            <h2 className="text-2xl font-black">{meal?.name ?? "Connect Supabase meals"}</h2>
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-black text-emerald-900">{meal?.country ?? "Database"}</span>
           </div>
-          <p className="text-sm leading-6 text-slate-600">{meal.description}</p>
+          <p className="text-sm leading-6 text-slate-600">{meal?.description ?? "The app is connected to Supabase and waiting for rows in the meals table."}</p>
           <div className="grid gap-2 sm:grid-cols-2">
             <div className="flex items-center gap-2 rounded-3xl bg-amber-100 p-3 font-black text-amber-950">
               <Utensils size={18} />

@@ -7,6 +7,7 @@ import { AppShell } from "@/components/app-shell";
 import { ProtectedPage } from "@/components/protected-page";
 import { useAuth } from "@/components/auth-provider";
 import { initialMeals } from "@/lib/meals";
+import { hasSupabaseConfig } from "@/lib/supabase";
 import { loadMeals } from "@/lib/supabase-data";
 import type { Meal } from "@/lib/types";
 
@@ -19,20 +20,20 @@ const quickPicks = [
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [featuredMeal, setFeaturedMeal] = useState<Meal>(initialMeals[1]);
+  const [featuredMeal, setFeaturedMeal] = useState<Meal | null>(hasSupabaseConfig ? null : initialMeals[1]);
 
   useEffect(() => {
     let mounted = true;
 
     loadMeals()
       .then((meals) => {
-        if (mounted && meals.length) {
+        if (mounted) {
           const preferred = meals.find((meal) => meal.country === user?.preferredCountry);
-          setFeaturedMeal(preferred ?? meals[0]);
+          setFeaturedMeal(preferred ?? meals[0] ?? null);
         }
       })
       .catch(() => {
-        if (mounted) {
+        if (mounted && !hasSupabaseConfig) {
           setFeaturedMeal(initialMeals[1]);
         }
       });
@@ -72,24 +73,36 @@ export default function DashboardPage() {
           <div className="grid gap-3">
             <Link href="/spin" className="group overflow-hidden rounded-[1.5rem] bg-slate-950 text-white shadow-soft md:rounded-[1.75rem]">
               <div className="relative h-64 md:h-[26rem]">
-                <img
-                  src={featuredMeal.imageUrl}
-                  alt={featuredMeal.name}
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent" />
-                <div className="absolute left-4 right-4 top-4 flex items-center justify-between gap-3">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-xs font-black text-slate-950">
-                    <Sparkles size={15} />
-                    Pick next meal
-                  </span>
-                  <span className="rounded-full bg-emerald-400 px-3 py-2 text-xs font-black text-slate-950">{featuredMeal.country}</span>
-                </div>
-                <div className="absolute inset-x-0 bottom-0 p-5">
-                  <p className="text-sm font-black uppercase tracking-wide text-amber-200">10-second meal picker</p>
-                  <h2 className="mt-1 text-3xl font-black leading-tight md:text-5xl">{featuredMeal.name}</h2>
-                  <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-white/85 md:text-base">{featuredMeal.description}</p>
-                </div>
+                {featuredMeal ? (
+                  <>
+                    <img
+                      src={featuredMeal.imageUrl}
+                      alt={featuredMeal.name}
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent" />
+                    <div className="absolute left-4 right-4 top-4 flex items-center justify-between gap-3">
+                      <span className="inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-xs font-black text-slate-950">
+                        <Sparkles size={15} />
+                        Pick next meal
+                      </span>
+                      <span className="rounded-full bg-emerald-400 px-3 py-2 text-xs font-black text-slate-950">{featuredMeal.country}</span>
+                    </div>
+                    <div className="absolute inset-x-0 bottom-0 p-5">
+                      <p className="text-sm font-black uppercase tracking-wide text-amber-200">10-second meal picker</p>
+                      <h2 className="mt-1 text-3xl font-black leading-tight md:text-5xl">{featuredMeal.name}</h2>
+                      <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-white/85 md:text-base">{featuredMeal.description}</p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="grid h-full place-items-center p-6 text-center">
+                    <div>
+                      <Sparkles className="mx-auto text-amber-200" size={34} />
+                      <h2 className="mt-4 text-3xl font-black">No Supabase meals yet</h2>
+                      <p className="mt-2 text-sm font-semibold text-white/75">Run the seed SQL or add meals from the admin page.</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </Link>
             <Link

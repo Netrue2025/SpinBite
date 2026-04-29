@@ -34,3 +34,29 @@ on conflict (id) do update set
   cooking_time = excluded.cooking_time,
   difficulty = excluded.difficulty,
   tags = excluded.tags;
+
+update public.meals as meal
+set image_url = fixed.image_url
+from (
+  values
+    ('nigeria-akara-pap', 'https://commons.wikimedia.org/wiki/Special:FilePath/Akara%20na%20Akamu%20%28Fried%20Bean%20cakes%20and%20Pap%29.jpg'),
+    ('nigeria-yam-egg', 'https://commons.wikimedia.org/wiki/Special:FilePath/Boiled%20yam%20and%20egg%20sauce.jpg'),
+    ('nigeria-moi-moi', 'https://commons.wikimedia.org/wiki/Special:FilePath/Making%20of%20Moi-moi%201.jpg'),
+    ('nigeria-jollof', 'https://commons.wikimedia.org/wiki/Special:FilePath/Jollof%20%28Jollof-%20Rice%29.jpg'),
+    ('uk-porridge', 'https://commons.wikimedia.org/wiki/Special:FilePath/Porridge%20with%20berries.JPG'),
+    ('uk-beans-toast', 'https://commons.wikimedia.org/wiki/Special:FilePath/Beans%20on%20toast.jpg'),
+    ('uk-jacket-potato', 'https://commons.wikimedia.org/wiki/Special:FilePath/Baked%20potato%20with%20tuna%2C%20sweetcorn%20and%20mayonnaise%20-%20Waitrose%20caf%C3%A9%2C%20Worthing%202025-12-11.jpg'),
+    ('brazil-acai', 'https://commons.wikimedia.org/wiki/Special:FilePath/Acai%20bowl%20%2843110767814%29.jpg'),
+    ('brazil-pao-queijo', 'https://commons.wikimedia.org/wiki/Special:FilePath/Pao%20de%20queijo%20%284813929850%29.jpg'),
+    ('brazil-feijoada-lite', 'https://commons.wikimedia.org/wiki/Special:FilePath/Feijoada%20%284808711154%29.jpg'),
+    ('brazil-tapioca-crepe', 'https://commons.wikimedia.org/wiki/Special:FilePath/Tapioca%20com%20queijo%20coalho%209354%20orig.jpg'),
+    ('india-poha', 'https://commons.wikimedia.org/wiki/Special:FilePath/Flattened%20Rice%20%28Poha%29%20%2849684434042%29.jpg'),
+    ('india-masala-omelette', 'https://commons.wikimedia.org/wiki/Special:FilePath/Masala%20Omelette.jpg'),
+    ('ghana-hausa-koko', 'https://commons.wikimedia.org/wiki/Special:FilePath/Hausa%20Kooko%20and%20Koose.jpg'),
+    ('ghana-waakye', 'https://commons.wikimedia.org/wiki/Special:FilePath/Waakye%2C%20a%20delicious%20delicacy%20in%20Ghana.jpg'),
+    ('other-shakshuka', 'https://commons.wikimedia.org/wiki/Special:FilePath/Shakshuka%20%28Unsplash%29.jpg'),
+    ('other-greek-yogurt', 'https://commons.wikimedia.org/wiki/Special:FilePath/Fruit%2C%20yogurt%2C%20granola%20%2833887713066%29.jpg'),
+    ('other-veggie-noodles', 'https://commons.wikimedia.org/wiki/Special:FilePath/Vegetable%20Noodles.jpg'),
+    ('us-turkey-wrap', 'https://commons.wikimedia.org/wiki/Special:FilePath/CookbookTurkeyWrap.jpg')
+) as fixed(id, image_url)
+where meal.id = fixed.id;
