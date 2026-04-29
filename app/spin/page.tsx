@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeDollarSign, CalendarPlus, MapPin, Salad, Sparkles, Zap } from "lucide-react";
+import { BadgeDollarSign, CalendarPlus, MapPin, Salad, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
@@ -33,6 +33,7 @@ export default function SpinPage() {
   const [planPickerOpen, setPlanPickerOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<PlanSlot>(() => firstAvailablePlanSlot());
   const [message, setMessage] = useState("");
+  const previewMeal = meals.find((meal) => meal.country === country) ?? meals[0];
 
   useEffect(() => {
     let mounted = true;
@@ -114,12 +115,12 @@ export default function SpinPage() {
   return (
     <ProtectedPage>
       <AppShell>
-        <section className="grid gap-3 lg:grid-cols-[.95fr_1.05fr] lg:gap-6">
-          <div className="order-2 rounded-[1.5rem] bg-white p-4 shadow-soft md:rounded-[2rem] md:p-7 lg:order-1">
+        <section className="grid gap-3 lg:grid-cols-[.72fr_1.28fr] lg:gap-6">
+          <div className="order-2 rounded-[1.5rem] bg-white p-4 shadow-soft md:rounded-[1.75rem] md:p-5 lg:order-1">
             <p className="text-xs font-black uppercase tracking-wide text-rose-500 md:text-sm">Spin meal</p>
-            <h1 className="mt-1 text-2xl font-black leading-tight md:mt-2 md:text-5xl">What would you like to eat today?</h1>
+            <h1 className="mt-1 text-2xl font-black leading-tight md:mt-2 md:text-4xl">What would you like to eat today?</h1>
 
-            <div className="mt-4 grid grid-cols-4 gap-2 md:mt-6 md:grid-cols-2 md:gap-3">
+            <div className="mt-4 grid grid-cols-4 gap-2 md:grid-cols-2">
               {tagOptions.map((option) => {
                 const Icon = tagIcons[option.id];
                 return (
@@ -127,7 +128,7 @@ export default function SpinPage() {
                     type="button"
                     key={option.id}
                     onClick={() => setTag(option.id)}
-                    className={`grid place-items-center gap-1 rounded-2xl px-2 py-3 text-xs font-black transition md:flex md:justify-center md:gap-2 md:rounded-[1.5rem] md:px-4 md:py-5 md:text-xl ${
+                    className={`grid place-items-center gap-1 rounded-2xl px-2 py-3 text-xs font-black transition md:flex md:justify-center md:gap-2 md:px-3 md:py-4 md:text-sm ${
                       tag === option.id ? "bg-slate-950 text-white shadow-soft" : "bg-amber-100 text-slate-950 hover:bg-amber-300"
                     }`}
                   >
@@ -151,16 +152,6 @@ export default function SpinPage() {
               </select>
             </label>
 
-            <button
-              type="button"
-              onClick={spin}
-              disabled={spinning}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-rose-500 px-5 py-3 text-base font-black text-white shadow-soft disabled:opacity-70 md:mt-5 md:px-6 md:py-4 md:text-lg"
-            >
-              <Sparkles size={20} />
-              {spinning ? "Spinning..." : "Spin Meal"}
-            </button>
-
             {message ? (
               <p className="mt-3 flex items-center gap-2 rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-800 md:mt-4 md:px-4 md:py-3 md:text-sm">
                 <CalendarPlus size={17} />
@@ -169,20 +160,37 @@ export default function SpinPage() {
             ) : null}
           </div>
 
-          <div className="order-1 grid gap-3 lg:order-2 lg:gap-5">
-            <div className="order-2 rounded-[1.5rem] bg-white p-3 shadow-soft md:rounded-[2rem] md:p-6 lg:order-1">
-              <SpinWheel spinning={spinning} onSpin={spin} />
-            </div>
+          <div className="order-1 grid gap-3 lg:order-2">
             {result ? (
-              <div className="order-1 lg:order-2">
-                <MealCard meal={result} onTryAgain={spin} onAddToPlan={openPlanPicker} addedToPlan={addedMealId === result.id} compact />
+              <div>
+                <MealCard meal={result} onTryAgain={spin} onAddToPlan={openPlanPicker} addedToPlan={addedMealId === result.id} />
+              </div>
+            ) : previewMeal ? (
+              <div className="overflow-hidden rounded-[1.5rem] bg-slate-950 text-white shadow-soft md:rounded-[1.75rem]">
+                <div className="relative h-72 md:h-[28rem]">
+                  <img src={previewMeal.imageUrl} alt={previewMeal.name} className="h-full w-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent" />
+                  <div className="absolute left-4 right-4 top-4 flex items-center justify-between gap-3">
+                    <span className="rounded-full bg-white/95 px-3 py-2 text-xs font-black text-slate-950">{previewMeal.country}</span>
+                    <span className="rounded-full bg-amber-300 px-3 py-2 text-xs font-black text-slate-950">{spinning ? "Spinning..." : "Tap the wheel"}</span>
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 p-5">
+                    <p className="text-sm font-black uppercase tracking-wide text-amber-200">Ready for a pick</p>
+                    <h2 className="mt-1 text-3xl font-black leading-tight md:text-5xl">{previewMeal.name}</h2>
+                    <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-white/85 md:text-base">
+                      Spin the wheel to choose your next meal.
+                    </p>
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="order-1 rounded-[1.5rem] bg-white p-4 text-center shadow-soft md:rounded-[2rem] md:p-6 lg:order-2">
-                <p className="text-3xl md:text-5xl">Meal</p>
-                <h2 className="mt-2 text-xl font-black md:mt-3 md:text-2xl">Your meal card will land here.</h2>
+              <div className="rounded-[1.5rem] bg-white p-5 text-center shadow-soft md:rounded-[1.75rem]">
+                <h2 className="text-2xl font-black">Your meal card will land here.</h2>
               </div>
             )}
+            <div className="rounded-[1.5rem] bg-white p-3 shadow-soft md:rounded-[1.75rem] md:p-4">
+              <SpinWheel spinning={spinning} onSpin={spin} />
+            </div>
           </div>
         </section>
 

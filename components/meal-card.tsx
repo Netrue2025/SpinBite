@@ -19,16 +19,23 @@ export function MealCard({
   compact?: boolean;
 }) {
   return (
-    <article className={`animate-pop overflow-hidden bg-white shadow-soft ${compact ? "rounded-[1.35rem] md:rounded-[2rem]" : "rounded-[2rem]"}`}>
+    <article className={`animate-pop overflow-hidden bg-white shadow-soft ${compact ? "rounded-[1.35rem] md:rounded-[2rem]" : "rounded-[1.5rem] md:rounded-[1.75rem]"}`}>
       <div className={compact ? "grid grid-cols-[6.75rem_1fr] md:block" : ""}>
-        <div className={`relative ${compact ? "min-h-[10.75rem] md:h-60" : "h-60"}`}>
+        <div className={`relative ${compact ? "min-h-[10.75rem] md:h-60" : "h-72 md:h-[28rem]"}`}>
           <img src={meal.imageUrl} alt={meal.name} className="h-full w-full object-cover" />
-          <div className={`absolute rounded-full bg-white/90 font-black ${compact ? "left-2 top-2 px-2 py-1 text-[10px] md:left-4 md:top-4 md:px-3 md:text-sm" : "left-4 top-4 px-3 py-1 text-sm"}`}>
+          {!compact ? <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/10 to-transparent" /> : null}
+          <div className={`absolute rounded-full bg-white/90 font-black ${compact ? "left-2 top-2 px-2 py-1 text-[10px] md:left-4 md:top-4 md:px-3 md:text-sm" : "left-4 top-4 px-3 py-2 text-xs text-slate-950"}`}>
             {meal.country}
           </div>
+          {!compact ? (
+            <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+              <h2 className="text-3xl font-black leading-tight md:text-5xl">{meal.name}</h2>
+              <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-white/85 md:text-base">{meal.description}</p>
+            </div>
+          ) : null}
         </div>
         <div className={compact ? "space-y-2 p-3 md:space-y-4 md:p-5" : "space-y-4 p-5"}>
-          <div>
+          <div className={compact ? "" : "hidden"}>
             <h2 className={compact ? "text-lg font-black leading-tight md:text-2xl" : "text-2xl font-black"}>{meal.name}</h2>
             <p className={compact ? "mt-1 hidden text-sm leading-6 text-slate-600 md:block" : "mt-1 text-sm leading-6 text-slate-600"}>
               {meal.description}
