@@ -79,7 +79,7 @@ export function LandingMealHero() {
   return (
     <div className="relative">
       <div className="absolute -left-4 top-8 z-10 animate-floaty rounded-3xl bg-white px-4 py-3 font-black shadow-soft">
-        {isPlanned ? `${slot} planned` : meal ? "Fresh pick" : "Supabase"}
+        {isPlanned ? `${slot} planned` : meal ? "Fresh pick" : "Loading"}
       </div>
       <div className="overflow-hidden rounded-[2rem] bg-white shadow-soft">
         {meal ? (
@@ -87,17 +87,17 @@ export function LandingMealHero() {
         ) : (
           <div className="grid h-80 place-items-center bg-slate-950 px-6 text-center text-white md:h-[32rem]">
             <div>
-              <h2 className="text-3xl font-black">No Supabase meals yet</h2>
-              <p className="mt-2 text-sm font-semibold text-white/75">Run the seed SQL or add meals from the admin page.</p>
+              <div className="mx-auto grid h-20 w-20 place-items-center rounded-[1.5rem] bg-rose-500 text-3xl font-black shadow-soft">SP</div>
+              <h2 className="mt-4 text-3xl font-black">Loading...</h2>
             </div>
           </div>
         )}
         <div className="space-y-3 p-5">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-2xl font-black">{meal?.name ?? "Connect Supabase meals"}</h2>
-            <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-black text-emerald-900">{meal?.country ?? "Database"}</span>
+            <h2 className="text-2xl font-black">{meal?.name ?? "Spin Bite"}</h2>
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-black text-emerald-900">{meal?.country ?? "SP"}</span>
           </div>
-          <p className="text-sm leading-6 text-slate-600">{meal?.description ?? "The app is connected to Supabase and waiting for rows in the meals table."}</p>
+          <p className="text-sm leading-6 text-slate-600">{meal?.description ?? "Loading fresh meal picks..."}</p>
           <div className="grid gap-2 sm:grid-cols-2">
             <div className="flex items-center gap-2 rounded-3xl bg-amber-100 p-3 font-black text-amber-950">
               <Utensils size={18} />

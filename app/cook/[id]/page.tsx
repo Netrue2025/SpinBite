@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarPlus, Clock, Flame, Star } from "lucide-react";
+import { CalendarPlus, Clock, ExternalLink, Flame, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
@@ -9,6 +9,7 @@ import { ProtectedPage } from "@/components/protected-page";
 import { firstAvailablePlanSlot, isMealSlotPast } from "@/lib/planner-utils";
 import { loadMeal, loadRatings, savePlan, saveRating as persistRating } from "@/lib/supabase-data";
 import type { Meal, MealRating } from "@/lib/types";
+import { youtubeEmbedUrl, youtubeWatchUrl } from "@/lib/youtube";
 
 const ratings: Array<{ id: MealRating["rating"]; label: string }> = [
   { id: "loved", label: "Loved it" },
@@ -16,6 +17,11 @@ const ratings: Array<{ id: MealRating["rating"]; label: string }> = [
   { id: "okay", label: "Okay" },
   { id: "not_for_me", label: "Not for me" }
 ];
+
+function recipeVideoSearchUrl(meal: Meal) {
+  const query = `${meal.name} ${meal.country} recipe cooking video`;
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+}
 
 export default function CookingGuidePage({ params }: { params: { id: string } }) {
   const { user } = useAuth();
@@ -140,12 +146,34 @@ export default function CookingGuidePage({ params }: { params: { id: string } })
 
               <div className="overflow-hidden rounded-[2rem] bg-slate-950 p-3 shadow-soft">
                 <iframe
+                  key={`${meal.id}-${meal.videoUrl}`}
                   className="aspect-video w-full rounded-[1.5rem]"
-                  src={meal.videoUrl}
+                  src={youtubeEmbedUrl(meal.videoUrl)}
                   title={`${meal.name} cooking video`}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
                   allowFullScreen
                 />
+                <div className="grid gap-2 p-2 pt-3 sm:grid-cols-2">
+                  <a
+                    href={youtubeWatchUrl(meal.videoUrl)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-black text-slate-950"
+                  >
+                    <ExternalLink size={16} />
+                    Open video
+                  </a>
+                  <a
+                    href={recipeVideoSearchUrl(meal)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-white/10 px-4 py-3 text-sm font-black text-white"
+                  >
+                    <ExternalLink size={16} />
+                    Find recipe
+                  </a>
+                </div>
               </div>
             </div>
 

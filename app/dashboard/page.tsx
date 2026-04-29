@@ -2,7 +2,7 @@
 
 import { BadgeDollarSign, CalendarDays, MapPin, Salad, Sparkles, Zap, type LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { ProtectedPage } from "@/components/protected-page";
 import { useAuth } from "@/components/auth-provider";
@@ -24,7 +24,11 @@ function spinHref(country: Country, tag: MealTag) {
 }
 
 function choosePreview(meals: Meal[], country: Country, tag: MealTag) {
-  return meals.find((meal) => meal.country === country && meal.tags.includes(tag)) ?? meals.find((meal) => meal.country === country) ?? meals[0] ?? null;
+  const pool = meals.filter((meal) => meal.country === country && meal.tags.includes(tag));
+  const countryPool = meals.filter((meal) => meal.country === country);
+  const candidates = pool.length ? pool : countryPool.length ? countryPool : meals;
+
+  return candidates[Math.floor(Math.random() * candidates.length)] ?? null;
 }
 
 export default function DashboardPage() {
@@ -32,6 +36,7 @@ export default function DashboardPage() {
   const [meals, setMeals] = useState<Meal[]>(hasSupabaseConfig ? [] : initialMeals);
   const [country, setCountry] = useState<Country>(user?.preferredCountry ?? "Nigeria");
   const [tag, setTag] = useState<MealTag>("quick");
+  const [featuredMeal, setFeaturedMeal] = useState<Meal | null>(() => choosePreview(hasSupabaseConfig ? [] : initialMeals, user?.preferredCountry ?? "Nigeria", "quick"));
 
   useEffect(() => {
     let mounted = true;
@@ -59,7 +64,10 @@ export default function DashboardPage() {
     }
   }, [user?.preferredCountry]);
 
-  const featuredMeal = useMemo(() => choosePreview(meals, country, tag), [country, meals, tag]);
+  useEffect(() => {
+    setFeaturedMeal(choosePreview(meals, country, tag));
+  }, [country, meals, tag]);
+
   const selectedTag = quickPicks.find((item) => item.id === tag)?.label ?? "Quick";
 
   return (
@@ -159,6 +167,13 @@ export default function DashboardPage() {
                 <span className="text-xl leading-tight md:text-2xl">Plan the whole week</span>
               </span>
               <span className="rounded-full bg-white/20 px-3 py-1 text-xs">Open</span>
+            </Link>
+            <Link
+              href={spinHref(country, tag)}
+              className="flex items-center justify-center gap-2 rounded-[1.5rem] bg-rose-500 p-4 font-black text-white shadow-soft transition hover:-translate-y-1 md:rounded-[1.75rem] md:p-5"
+            >
+              <Sparkles size={21} />
+              Spin Now
             </Link>
           </div>
         </section>
